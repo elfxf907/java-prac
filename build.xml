@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="training-center-db" default="db-help" basedir=".">
+
+    <property file="build.properties"/>
+
+    <property name="psql.bin" value="psql"/>
+
+    <property name="db.dir" value="db"/>
+    <property name="sql.create" value="${db.dir}/create.sql"/>
+    <property name="sql.init" value="${db.dir}/init.sql"/>
+    <property name="sql.cleanup" value="${db.dir}/cleanup.sql"/>
+
+    <target name="db-help">
+        <echo>Targets:</echo>
+        <echo>  db-create - создание таблиц в БД</echo>
+        <echo>  db-init   - заполнение таблиц начальными данными</echo>
+        <echo>  db-show   - показать данные в БД</echo>
+        <echo>  db-clean  - очистить БД</echo>
+        <echo>  db-reset  - пересоздать БД и заполнить ее начальными данными</echo>
+    </target>
+
+    <macrodef name="run-psql-file">
+        <attribute name="file"/>
+        <sequential>
+            <exec executable="${psql.bin}" failonerror="true">
+                <env key="PGPASSWORD" value="${db.password}"/>
+                <arg value="-v"/><arg value="ON_ERROR_STOP=1"/>
+                <arg value="-h"/><arg value="${db.host}"/>
+                <arg value="-p"/><arg value="${db.port}"/>
+                <arg value="-U"/><arg value="${db.user}"/>
+                <arg value="-d"/><arg value="${db.name}"/>
+                <arg value="-f"/><arg value="@{file}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="run-psql-command">
+        <attribute name="sql"/>
+        <sequential>
+            <exec executable="${psql.bin}" failonerror="true">
+                <env key="PGPASSWORD" value="${db.password}"/>
+                <arg value="-v"/><arg value="ON_ERROR_STOP=1"/>
+                <arg value="-h"/><arg value="${db.host}"/>
+                <arg value="-p"/><arg value="${db.port}"/>
+                <arg value="-U"/><arg value="${db.user}"/>
+                <arg value="-d"/><arg value="${db.name}"/>
+                <arg value="-c"/><arg value="@{sql}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <target name="check-config">
+        <fail unless="db.host">Missing db.host in build.properties</fail>
+        <fail unless="db.port">Missing db.port in build.properties</fail>
+        <fail unless="db.user">Missing db.user in build.properties</fail>
+        <fail unless="db.password">Missing db.password in build.properties</fail>
+        <fail unless="db.name">Missing db.name in build.properties</fail>
+    </target>
+
+    <target name="db-create" depends="check-config">
+        <available file="${sql.create}" property="create.exists"/>
+        <fail unless="create.exists">Missing file: ${sql.create}</fail>
+        <run-psql-file file="${sql.create}"/>
+    </target>
+
+    <target name="db-init" depends="check-config">
+        <available file="${sql.init}" property="init.exists"/>
+        <fail unless="init.exists">Missing file: ${sql.init}</fail>
+        <run-psql-file file="${sql.init}"/>
+    </target>
+
+    <target name="db-clean" depends="check-config">
+        <available file="${sql.cleanup}" property="cleanup.exists"/>
+        <fail unless="cleanup.exists">Missing file: ${sql.cleanup}</fail>
+        <run-psql-file file="${sql.cleanup}"/>
+    </target>
+
+    <target name="db-reset" depends="db-clean,db-create,db-init"/>
+
+    <target name="db-show" depends="check-config">
+        <run-psql-command sql="select 'companies' as table_name, count(*) as row_count from companies union all
+                               select 'teachers', count(*) from teachers union all
+                               select 'students', count(*) from students union all
+                               select 'courses', count(*) from courses union all
+                               select 'course_teachers', count(*) from course_teachers union all
+                               select 'student_courses', count(*) from student_courses union all
+                               select 'lessons', count(*) from lessons union all
+                               select 'lesson_students', count(*) from lesson_students
+                               order by table_name;"/>
+    </target>
+
+</project>
