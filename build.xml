@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="training-center-db" default="db-help" basedir=".">
+<project name="java-prac" default="help" basedir=".">
 
     <property file="build.properties"/>
 
@@ -10,13 +10,19 @@
     <property name="sql.init" value="${db.dir}/init.sql"/>
     <property name="sql.cleanup" value="${db.dir}/cleanup.sql"/>
 
-    <target name="db-help">
+    <property name="gradle.bin" value="./gradlew"/>
+
+    <target name="help">
         <echo>Targets:</echo>
-        <echo>  db-create - создание таблиц в БД</echo>
-        <echo>  db-init   - заполнение таблиц начальными данными</echo>
-        <echo>  db-show   - показать данные в БД</echo>
-        <echo>  db-clean  - очистить БД</echo>
-        <echo>  db-reset  - пересоздать БД и заполнить ее начальными данными</echo>
+        <echo>  db-create      - создание таблиц в БД</echo>
+        <echo>  db-init        - заполнение таблиц начальными данными</echo>
+        <echo>  db-show        - показать данные в БД</echo>
+        <echo>  db-clean       - очистить БД</echo>
+        <echo>  db-reset       - пересоздать БД и заполнить начальными данными</echo>
+        <echo>  compile        - сборка проекта </echo>
+        <echo>  compile-tests  - сборка тестов </echo>
+        <echo>  test           - запуск unit-тестов </echo>
+        <echo>  ci             - db-reset + test</echo>
     </target>
 
     <macrodef name="run-psql-file">
@@ -88,5 +94,25 @@
                                select 'lesson_students', count(*) from lesson_students
                                order by table_name;"/>
     </target>
+    <target name="compile">
+        <exec executable="${gradle.bin}" failonerror="true">
+            <arg value="clean"/>
+            <arg value="classes"/>
+        </exec>
+    </target>
+
+    <target name="compile-tests" depends="compile">
+        <exec executable="${gradle.bin}" failonerror="true">
+            <arg value="testClasses"/>
+        </exec>
+    </target>
+
+    <target name="test" depends="compile-tests">
+        <exec executable="${gradle.bin}" failonerror="true">
+            <arg value="test"/>
+        </exec>
+    </target>
+
+    <target name="ci" depends="db-reset,test"/>
 
 </project>
