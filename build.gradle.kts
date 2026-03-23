@@ -31,6 +31,7 @@ dependencies {
 	compileOnly("org.projectlombok:lombok")
 	runtimeOnly("org.postgresql:postgresql")
 	annotationProcessor("org.projectlombok:lombok")
+	testImplementation("org.testng:testng:7.10.2")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -38,5 +39,5 @@ dependencies {
 }
 
 tasks.withType<Test> {
-	useJUnitPlatform()
+	useTestNG()
 }
