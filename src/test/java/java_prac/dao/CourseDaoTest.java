@@ -233,6 +233,30 @@ public class CourseDaoTest {
     }
 
     @Test
+    public void testAddLessonNullStart() {
+        Lesson lesson = courseDao.addLesson(
+                1L,
+                1L,
+                null,
+                LocalDateTime.of(2026, 4, 1, 12, 0)
+        );
+
+        Assert.assertNull(lesson);
+    }
+
+    @Test
+    public void testAddLessonNullEnd() {
+        Lesson lesson = courseDao.addLesson(
+                1L,
+                1L,
+                LocalDateTime.of(2026, 4, 1, 10, 0),
+                null
+        );
+
+        Assert.assertNull(lesson);
+    }
+
+    @Test
     public void testAddLessonCourseNotFound() {
         Lesson lesson = courseDao.addLesson(
                 999999L,

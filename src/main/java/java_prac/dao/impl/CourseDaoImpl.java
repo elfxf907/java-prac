@@ -8,9 +8,7 @@ import java_prac.model.Lesson;
 import java_prac.model.Student;
 import java_prac.model.Teacher;
 import java_prac.util.HibernateUtil;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,118 +28,85 @@ public class CourseDaoImpl implements CourseDao {
 
     @Override
     public Course save(Course course) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+        return sessionFactory.fromTransaction(session -> {
             session.persist(course);
-            transaction.commit();
             return course;
-        } catch (RuntimeException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
     public Optional<Course> findById(Long id) {
-        try (Session session = sessionFactory.openSession()) {
-            return Optional.ofNullable(session.get(Course.class, id));
-        }
+        return sessionFactory.fromSession(session ->
+                Optional.ofNullable(session.find(Course.class, id))
+        );
     }
 
     @Override
     public List<Course> findAll() {
-        try (Session session = sessionFactory.openSession()) {
-            return session.createQuery("from Course order by id", Course.class).getResultList();
-        }
+        return sessionFactory.fromSession(session ->
+                session.createQuery("from Course order by id", Course.class).getResultList()
+        );
     }
 
     @Override
     public Course update(Course course) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            Course merged = (Course) session.merge(course);
-            transaction.commit();
-            return merged;
-        } catch (RuntimeException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            throw e;
-        }
+        return sessionFactory.fromTransaction(session -> (Course) session.merge(course));
     }
 
     @Override
     public boolean deleteById(Long id) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            Course course = session.get(Course.class, id);
+        return sessionFactory.fromTransaction(session -> {
+            Course course = session.find(Course.class, id);
             if (course == null) {
-                transaction.commit();
                 return false;
             }
             session.remove(course);
-            transaction.commit();
             return true;
-        } catch (RuntimeException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
     public List<Student> findStudentsByCourseId(Long courseId) {
-        try (Session session = sessionFactory.openSession()) {
-            return session.createQuery("""
-                    select sc.student
-                    from StudentCourse sc
-                    where sc.course.id = :courseId
-                    order by sc.student.id
-                    """, Student.class)
-                    .setParameter("courseId", courseId)
-                    .getResultList();
-        }
+        return sessionFactory.fromSession(session ->
+                session.createQuery("""
+                        select sc.student
+                        from StudentCourse sc
+                        where sc.course.id = :courseId
+                        order by sc.student.id
+                        """, Student.class)
+                        .setParameter("courseId", courseId)
+                        .getResultList()
+        );
     }
 
     @Override
     public List<Teacher> findTeachersByCourseId(Long courseId) {
-        try (Session session = sessionFactory.openSession()) {
-            return session.createQuery("""
-                    select ct.teacher
-                    from CourseTeacher ct
-                    where ct.course.id = :courseId
-                    order by ct.teacher.id
-                    """, Teacher.class)
-                    .setParameter("courseId", courseId)
-                    .getResultList();
-        }
+        return sessionFactory.fromSession(session ->
+                session.createQuery("""
+                        select ct.teacher
+                        from CourseTeacher ct
+                        where ct.course.id = :courseId
+                        order by ct.teacher.id
+                        """, Teacher.class)
+                        .setParameter("courseId", courseId)
+                        .getResultList()
+        );
     }
 
     @Override
     public boolean addTeacherToCourse(Long courseId, Long teacherId) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-
-            Course course = session.get(Course.class, courseId);
-            Teacher teacher = session.get(Teacher.class, teacherId);
+        return sessionFactory.fromTransaction(session -> {
+            Course course = session.find(Course.class, courseId);
+            Teacher teacher = session.find(Teacher.class, teacherId);
 
             if (course == null || teacher == null) {
-                transaction.commit();
                 return false;
             }
 
             CourseTeacherId id = new CourseTeacherId(courseId, teacherId);
-            CourseTeacher existing = session.get(CourseTeacher.class, id);
+            CourseTeacher existing = session.find(CourseTeacher.class, id);
 
             if (existing != null) {
-                transaction.commit();
                 return false;
             }
 
@@ -152,14 +117,8 @@ public class CourseDaoImpl implements CourseDao {
                     .build();
 
             session.persist(courseTeacher);
-            transaction.commit();
             return true;
-        } catch (RuntimeException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            throw e;
-        }
+        });
     }
 
     @Override
@@ -168,15 +127,11 @@ public class CourseDaoImpl implements CourseDao {
             return null;
         }
 
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-
-            Course course = session.get(Course.class, courseId);
-            Teacher teacher = session.get(Teacher.class, teacherId);
+        return sessionFactory.fromTransaction(session -> {
+            Course course = session.find(Course.class, courseId);
+            Teacher teacher = session.find(Teacher.class, teacherId);
 
             if (course == null || teacher == null) {
-                transaction.commit();
                 return null;
             }
 
@@ -188,13 +143,7 @@ public class CourseDaoImpl implements CourseDao {
                     .build();
 
             session.persist(lesson);
-            transaction.commit();
             return lesson;
-        } catch (RuntimeException e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-            throw e;
-        }
+        });
     }
 }
