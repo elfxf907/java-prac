@@ -22,6 +22,10 @@
         <echo>  compile        - сборка проекта </echo>
         <echo>  compile-tests  - сборка тестов </echo>
         <echo>  test           - запуск unit-тестов </echo>
+        <echo>  system-test    - запуск системных Selenium-тестов </echo>
+        <echo>  war            - сборка WAR-архива приложения </echo>
+        <echo>  full-build     - clean + test + war </echo>
+        <echo>  deploy         - копирование WAR в каталог Tomcat webapps </echo>
         <echo>  ci             - db-reset + test</echo>
     </target>
 
@@ -111,6 +115,37 @@
         <exec executable="${gradle.bin}" failonerror="true">
             <arg value="test"/>
         </exec>
+    </target>
+
+    <target name="system-test">
+        <exec executable="${gradle.bin}" failonerror="true">
+            <arg value="systemTest"/>
+        </exec>
+    </target>
+
+    <target name="war">
+        <exec executable="${gradle.bin}" failonerror="true">
+            <arg value="clean"/>
+            <arg value="bootWar"/>
+        </exec>
+    </target>
+
+    <target name="full-build">
+        <exec executable="${gradle.bin}" failonerror="true">
+            <arg value="clean"/>
+            <arg value="test"/>
+            <arg value="bootWar"/>
+        </exec>
+    </target>
+
+    <target name="deploy" depends="war">
+        <fail unless="tomcat.webapps.dir">Missing tomcat.webapps.dir in build.properties</fail>
+        <mkdir dir="${tomcat.webapps.dir}"/>
+        <copy todir="${tomcat.webapps.dir}" flatten="true">
+            <fileset dir="build/libs">
+                <include name="*.war"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="ci" depends="db-reset,test"/>
