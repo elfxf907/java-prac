@@ -9,6 +9,7 @@ import java_prac.model.Student;
 import java_prac.model.Teacher;
 import java_prac.util.HibernateUtil;
 import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -145,5 +146,54 @@ public class CourseDaoImpl implements CourseDao {
             session.persist(lesson);
             return lesson;
         });
+    }
+    @Override
+    public List<Course> findByCompanyId(Long companyId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "from Course c where c.company.id = :companyId", Course.class)
+                    .setParameter("companyId", companyId)
+                    .list();
+        }
+    }
+    @Override
+    public List<Course> findByTeacherId(Long teacherId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("""
+                select c
+                from Course c
+                join CourseTeacher ct on ct.course.id = c.id
+                where ct.teacher.id = :teacherId
+                """, Course.class)
+                    .setParameter("teacherId", teacherId)
+                    .list();
+        }
+    }
+    @Override
+    public List<Course> findAllWithCompany() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("""
+                select c
+                from Course c
+                join fetch c.company
+                order by c.id
+                """, Course.class)
+                    .list();
+        }
+    }
+
+    @Override
+    public Optional<Course> findByIdWithCompany(Long id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Course course = session.createQuery("""
+                select c
+                from Course c
+                join fetch c.company
+                where c.id = :id
+                """, Course.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
+            return Optional.ofNullable(course);
+        }
     }
 }

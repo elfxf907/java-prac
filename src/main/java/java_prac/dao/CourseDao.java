@@ -18,6 +18,10 @@ public interface CourseDao {
 
     List<Student> findStudentsByCourseId(Long courseId);
     List<Teacher> findTeachersByCourseId(Long courseId);
+    List<Course> findByCompanyId(Long companyId);
+    List<Course> findByTeacherId(Long teacherId);
+    List<Course> findAllWithCompany();
+    Optional<Course> findByIdWithCompany(Long id);
 
     boolean addTeacherToCourse(Long courseId, Long teacherId);
     Lesson addLesson(Long courseId, Long teacherId, LocalDateTime start, LocalDateTime end);

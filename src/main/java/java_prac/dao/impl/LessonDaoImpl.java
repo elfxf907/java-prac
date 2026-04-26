@@ -4,6 +4,7 @@ import java_prac.dao.LessonDao;
 import java_prac.model.Lesson;
 import java_prac.util.HibernateUtil;
 import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -107,4 +108,5 @@ public class LessonDaoImpl implements LessonDao {
                         .getResultList()
         );
     }
+
 }

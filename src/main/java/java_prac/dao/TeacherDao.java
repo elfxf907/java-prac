@@ -11,6 +11,10 @@ import java.util.Optional;
 public interface TeacherDao {
     Teacher save(Teacher teacher);
     Optional<Teacher> findById(Long id);
+    List<Teacher> findByCompanyId(Long companyId);
+    List<Teacher> findAllWithCompany();
+    Optional<Teacher> findByIdWithCompany(Long id);
+    
     List<Teacher> findAll();
     Teacher update(Teacher teacher);
     boolean deleteById(Long id);

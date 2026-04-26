@@ -8,6 +8,8 @@ import java_prac.model.StudentCourse;
 import java_prac.model.StudentCourseId;
 import java_prac.util.HibernateUtil;
 import org.hibernate.SessionFactory;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -111,17 +113,48 @@ public class StudentDaoImpl implements StudentDao {
     public List<Lesson> findScheduleByStudentIdAndPeriod(Long studentId, LocalDateTime from, LocalDateTime to) {
         return sessionFactory.fromSession(session ->
                 session.createQuery("""
-                        select ls.lesson
-                        from LessonStudent ls
-                        where ls.student.id = :studentId
-                          and ls.lesson.startTime >= :from
-                          and ls.lesson.endTime <= :to
-                        order by ls.lesson.startTime
-                        """, Lesson.class)
+                    select distinct l
+                    from Lesson l
+                    join fetch l.course
+                    join fetch l.teacher
+                    join LessonStudent ls on ls.lesson.id = l.id
+                    where ls.student.id = :studentId
+                      and l.startTime >= :from
+                      and l.endTime <= :to
+                    order by l.startTime
+                    """, Lesson.class)
                         .setParameter("studentId", studentId)
                         .setParameter("from", from)
                         .setParameter("to", to)
                         .getResultList()
         );
+    }
+    @Override
+    public boolean enrollToCourse(Long studentId, Long courseId) {
+        return sessionFactory.fromTransaction(session -> {
+            Student student = session.find(Student.class, studentId);
+            Course course = session.find(Course.class, courseId);
+
+            if (student == null || course == null) {
+                return false;
+            }
+
+            StudentCourseId id = new StudentCourseId(studentId, courseId);
+            StudentCourse existing = session.find(StudentCourse.class, id);
+
+            if (existing != null) {
+                return false;
+            }
+
+            StudentCourse studentCourse = StudentCourse.builder()
+                    .id(id)
+                    .student(student)
+                    .course(course)
+                    .enrolledAt(LocalDateTime.now())
+                    .build();
+
+            session.persist(studentCourse);
+            return true;
+        });
     }
 }

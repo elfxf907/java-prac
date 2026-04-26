@@ -16,4 +16,5 @@ public interface LessonDao {
     List<Lesson> findByCourseId(Long courseId);
     List<Lesson> findByTeacherIdAndPeriod(Long teacherId, LocalDateTime from, LocalDateTime to);
     List<Lesson> findByStudentIdAndPeriod(Long studentId, LocalDateTime from, LocalDateTime to);
+
 }

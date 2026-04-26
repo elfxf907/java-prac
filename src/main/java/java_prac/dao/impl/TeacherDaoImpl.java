@@ -5,6 +5,11 @@ import java_prac.model.Lesson;
 import java_prac.model.Teacher;
 import java_prac.util.HibernateUtil;
 import org.hibernate.SessionFactory;
+import org.hibernate.Session;
+import org.hibernate.Session;
+import java_prac.model.Lesson;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -79,16 +84,55 @@ public class TeacherDaoImpl implements TeacherDao {
     public List<Lesson> findScheduleByTeacherIdAndPeriod(Long teacherId, LocalDateTime from, LocalDateTime to) {
         return sessionFactory.fromSession(session ->
                 session.createQuery("""
-                        from Lesson l
-                        where l.teacher.id = :teacherId
-                          and l.startTime >= :from
-                          and l.endTime <= :to
-                        order by l.startTime
-                        """, Lesson.class)
+                    select l
+                    from Lesson l
+                    join fetch l.course
+                    join fetch l.teacher
+                    where l.teacher.id = :teacherId
+                      and l.startTime >= :from
+                      and l.endTime <= :to
+                    order by l.startTime
+                    """, Lesson.class)
                         .setParameter("teacherId", teacherId)
                         .setParameter("from", from)
                         .setParameter("to", to)
                         .getResultList()
         );
     }
+    @Override
+    public List<Teacher> findByCompanyId(Long companyId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "from Teacher t where t.company.id = :companyId", Teacher.class)
+                    .setParameter("companyId", companyId)
+                    .list();
+        }
+    }
+    @Override
+    public List<Teacher> findAllWithCompany() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("""
+                select t
+                from Teacher t
+                join fetch t.company
+                order by t.id
+                """, Teacher.class)
+                    .list();
+        }
+    }
+    @Override
+    public Optional<Teacher> findByIdWithCompany(Long id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Teacher teacher = session.createQuery("""
+                select t
+                from Teacher t
+                join fetch t.company
+                where t.id = :id
+                """, Teacher.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
+            return Optional.ofNullable(teacher);
+        }
+    }
+
 }

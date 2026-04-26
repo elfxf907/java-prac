@@ -14,6 +14,7 @@ public interface StudentDao {
     List<Student> findAll();
     Student update(Student student);
     boolean deleteById(Long id);
+    boolean enrollToCourse(Long studentId, Long courseId);
 
     List<Course> findCoursesByStudentId(Long studentId);
     boolean enrollStudentToCourse(Long studentId, Long courseId);
