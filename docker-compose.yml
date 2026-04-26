@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: java-prac-postgres
+    environment:
+      POSTGRES_DB: java-prac-DB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "6835"
+    ports:
+      - "5432:5432"
+    volumes:
+      - java-prac-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d java-prac-DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  java-prac-postgres-data:

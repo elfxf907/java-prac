@@ -19,13 +19,14 @@
         <echo>  db-show        - показать данные в БД</echo>
         <echo>  db-clean       - очистить БД</echo>
         <echo>  db-reset       - пересоздать БД и заполнить начальными данными</echo>
+        <echo>  db-wait        - проверить, что PostgreSQL доступен</echo>
         <echo>  compile        - сборка проекта </echo>
         <echo>  compile-tests  - сборка тестов </echo>
         <echo>  test           - запуск unit-тестов </echo>
         <echo>  system-test    - запуск системных Selenium-тестов </echo>
         <echo>  war            - сборка WAR-архива приложения </echo>
-        <echo>  full-build     - clean + test + war </echo>
-        <echo>  deploy         - копирование WAR в каталог Tomcat webapps </echo>
+        <echo>  full-build     - db-reset + clean + test + war </echo>
+        <echo>  deploy         - db-reset + сборка WAR + копирование в Tomcat webapps </echo>
         <echo>  ci             - db-reset + test</echo>
     </target>
 
@@ -67,19 +68,23 @@
         <fail unless="db.name">Missing db.name in build.properties</fail>
     </target>
 
-    <target name="db-create" depends="check-config">
+    <target name="db-wait" depends="check-config">
+        <run-psql-command sql="select 1;"/>
+    </target>
+
+    <target name="db-create" depends="db-wait">
         <available file="${sql.create}" property="create.exists"/>
         <fail unless="create.exists">Missing file: ${sql.create}</fail>
         <run-psql-file file="${sql.create}"/>
     </target>
 
-    <target name="db-init" depends="check-config">
+    <target name="db-init" depends="db-wait">
         <available file="${sql.init}" property="init.exists"/>
         <fail unless="init.exists">Missing file: ${sql.init}</fail>
         <run-psql-file file="${sql.init}"/>
     </target>
 
-    <target name="db-clean" depends="check-config">
+    <target name="db-clean" depends="db-wait">
         <available file="${sql.cleanup}" property="cleanup.exists"/>
         <fail unless="cleanup.exists">Missing file: ${sql.cleanup}</fail>
         <run-psql-file file="${sql.cleanup}"/>
@@ -130,7 +135,7 @@
         </exec>
     </target>
 
-    <target name="full-build">
+    <target name="full-build" depends="db-reset">
         <exec executable="${gradle.bin}" failonerror="true">
             <arg value="clean"/>
             <arg value="test"/>
@@ -138,7 +143,7 @@
         </exec>
     </target>
 
-    <target name="deploy" depends="war">
+    <target name="deploy" depends="db-reset,war">
         <fail unless="tomcat.webapps.dir">Missing tomcat.webapps.dir in build.properties</fail>
         <mkdir dir="${tomcat.webapps.dir}"/>
         <copy todir="${tomcat.webapps.dir}" flatten="true">
