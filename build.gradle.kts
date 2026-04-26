@@ -69,10 +69,13 @@ jacoco {
 
 tasks.withType<Test> {
     useTestNG()
+}
+
+tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-tasks.register<Test>("systemTest") {
+val systemTestTask = tasks.register<Test>("systemTest") {
     description = "Runs Selenium system tests against the Spring Boot web application."
     group = "verification"
 
@@ -85,10 +88,18 @@ tasks.register<Test>("systemTest") {
     }
 
     systemProperty("java.awt.headless", "true")
+    finalizedBy(tasks.jacocoTestReport)
 }
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+    mustRunAfter(systemTestTask)
+
+    executionData.setFrom(
+        fileTree(layout.buildDirectory.dir("jacoco")) {
+            include("*.exec")
+        }
+    )
 
     reports {
         html.required.set(true)
