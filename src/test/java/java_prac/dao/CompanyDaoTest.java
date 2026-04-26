@@ -46,7 +46,7 @@ public class CompanyDaoTest {
     @Test
     public void testSave() {
         Company company = Company.builder()
-                .name("Company DAO Test Save")
+                .name("Company DAO Test Save " + System.nanoTime())
                 .address("Address Save")
                 .build();
 
@@ -54,18 +54,18 @@ public class CompanyDaoTest {
 
         Assert.assertNotNull(saved);
         Assert.assertNotNull(saved.getId());
-        Assert.assertEquals(saved.getName(), "Company DAO Test Save");
         Assert.assertEquals(saved.getAddress(), "Address Save");
 
         Optional<Company> fromDb = companyDao.findById(saved.getId());
         Assert.assertTrue(fromDb.isPresent());
-        Assert.assertEquals(fromDb.get().getName(), "Company DAO Test Save");
+        Assert.assertEquals(fromDb.get().getName(), saved.getName());
+        Assert.assertEquals(fromDb.get().getAddress(), "Address Save");
     }
 
     @Test
     public void testUpdate() {
         Company company = Company.builder()
-                .name("Company DAO Test Update")
+                .name("Company DAO Test Update " + System.nanoTime())
                 .address("Old Address")
                 .build();
 
@@ -76,6 +76,7 @@ public class CompanyDaoTest {
 
         Assert.assertNotNull(updated);
         Assert.assertEquals(updated.getId(), saved.getId());
+        Assert.assertEquals(updated.getName(), saved.getName());
         Assert.assertEquals(updated.getAddress(), "New Address");
 
         Optional<Company> fromDb = companyDao.findById(saved.getId());
@@ -86,7 +87,7 @@ public class CompanyDaoTest {
     @Test
     public void testDeleteByIdExisting() {
         Company company = Company.builder()
-                .name("Company DAO Test Delete")
+                .name("Company DAO Test Delete " + System.nanoTime())
                 .address("Delete Address")
                 .build();
 
