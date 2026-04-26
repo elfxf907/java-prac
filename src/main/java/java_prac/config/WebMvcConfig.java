@@ -23,7 +23,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addFormatters(FormatterRegistry registry) {
-        registry.addConverter(String.class, LocalDateTime.class,
-                source -> LocalDateTime.parse(source, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
+        registry.addConverter(String.class, LocalDateTime.class, source -> {
+            if (source == null || source.isBlank()) {
+                return null;
+            }
+            return LocalDateTime.parse(source, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+        });
     }
 }

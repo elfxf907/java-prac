@@ -1,6 +1,8 @@
 package java_prac.system;
 
 import java.time.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import java_prac.JavaPracApplication;
 import org.openqa.selenium.By;
@@ -26,6 +28,8 @@ import org.testng.annotations.Test;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
+
+    private static final Pattern LAST_PATH_NUMBER = Pattern.compile(".*/(\\d+)(?:\\?.*)?$");
 
     @LocalServerPort
     private int port;
@@ -107,6 +111,30 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
     }
 
     @Test(groups = "system")
+    public void companyCanBeEditedAndDeleted() {
+        String name = "Selenium Editable Company " + System.nanoTime();
+        String updatedName = name + " Updated";
+
+        open("/companies/new");
+        byId("name").sendKeys(name);
+        byId("address").sendKeys("Before edit");
+        submitForm();
+
+        String companyId = currentEntityId();
+        open("/companies/" + companyId + "/edit");
+        replaceValue("name", updatedName);
+        replaceValue("address", "After edit");
+        submitForm();
+
+        assertPageContains("Карточка компании");
+        assertPageContains(updatedName);
+        assertPageContains("After edit");
+
+        post("/companies/" + companyId + "/delete");
+        assertPageContains("Список компаний");
+    }
+
+    @Test(groups = "system")
     public void studentCanBeCreatedAndEnrolledToCourse() {
         String fullName = "Selenium Student " + System.nanoTime();
 
@@ -127,6 +155,35 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
     }
 
     @Test(groups = "system")
+    public void studentCanBeEditedAndDeleted() {
+        String fullName = "Selenium Editable Student " + System.nanoTime();
+        String updatedName = fullName + " Updated";
+
+        open("/students/new");
+        byId("fullName").sendKeys(fullName);
+        submitForm();
+
+        String studentId = currentEntityId();
+        open("/students/" + studentId + "/edit");
+        replaceValue("fullName", updatedName);
+        submitForm();
+
+        assertPageContains("Карточка обучающегося");
+        assertPageContains(updatedName);
+
+        post("/students/" + studentId + "/delete");
+        assertPageContains("Список обучающихся");
+    }
+
+    @Test(groups = "system")
+    public void studentCreateShowsValidationErrorForBlankName() {
+        open("/students/new");
+        submitForm();
+
+        assertPageContains("ФИО не должно быть пустым");
+    }
+
+    @Test(groups = "system")
     public void teacherCanBeCreatedSuccessfully() {
         String fullName = "Selenium Teacher " + System.nanoTime();
 
@@ -138,6 +195,38 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
         assertPageContains("Карточка преподавателя");
         assertPageContains(fullName);
         assertPageContains("Компания");
+    }
+
+    @Test(groups = "system")
+    public void teacherCanBeEditedAndDeleted() {
+        String fullName = "Selenium Editable Teacher " + System.nanoTime();
+        String updatedName = fullName + " Updated";
+
+        open("/teachers/new");
+        byId("fullName").sendKeys(fullName);
+        new Select(byId("companyId")).selectByIndex(1);
+        submitForm();
+
+        String teacherId = currentEntityId();
+        open("/teachers/" + teacherId + "/edit");
+        replaceValue("fullName", updatedName);
+        new Select(byId("companyId")).selectByIndex(2);
+        submitForm();
+
+        assertPageContains("Карточка преподавателя");
+        assertPageContains(updatedName);
+
+        post("/teachers/" + teacherId + "/delete");
+        assertPageContains("Список преподавателей");
+    }
+
+    @Test(groups = "system")
+    public void teacherCreateShowsValidationErrorsForMissingRequiredFields() {
+        open("/teachers/new");
+        submitForm();
+
+        assertPageContains("ФИО не должно быть пустым");
+        assertPageContains("Нужно выбрать компанию");
     }
 
     @Test(groups = "system")
@@ -155,6 +244,36 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
         assertPageContains("Карточка курса");
         assertPageContains(title);
         assertPageContains("Selenium course description");
+    }
+
+    @Test(groups = "system")
+    public void courseCanBeEditedAndDeleted() {
+        String title = "Selenium Editable Course " + System.nanoTime();
+        String updatedTitle = title + " Updated";
+
+        open("/courses/new");
+        byId("title").sendKeys(title);
+        byId("description").sendKeys("Before edit");
+        new Select(byId("companyId")).selectByIndex(1);
+        new Select(byId("durationType")).selectByValue("DAY");
+        byId("hoursPerDay").sendKeys("2");
+        submitForm();
+
+        String courseId = currentEntityId();
+        open("/courses/" + courseId + "/edit");
+        replaceValue("title", updatedTitle);
+        replaceValue("description", "After edit");
+        new Select(byId("companyId")).selectByIndex(2);
+        new Select(byId("durationType")).selectByValue("MONTH");
+        replaceValue("hoursPerDay", "3");
+        submitForm();
+
+        assertPageContains("Карточка курса");
+        assertPageContains(updatedTitle);
+        assertPageContains("After edit");
+
+        post("/courses/" + courseId + "/delete");
+        assertPageContains("Список курсов");
     }
 
     @Test(groups = "system")
@@ -182,6 +301,16 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
     }
 
     @Test(groups = "system")
+    public void lessonCreateShowsValidationErrorsForMissingRequiredFields() {
+        open("/courses/1/lessons/new");
+        submitForm();
+
+        assertPageContains("Нужно выбрать преподавателя");
+        assertPageContains("Нужно указать дату и время начала");
+        assertPageContains("Нужно указать дату и время окончания");
+    }
+
+    @Test(groups = "system")
     public void lessonCreateRejectsEndTimeBeforeStartTime() {
         open("/courses/1/lessons/new");
         new Select(byId("teacherId")).selectByIndex(1);
@@ -203,6 +332,20 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
 
         assertPageContains("Результат поиска расписания");
         assertPageContains("Найденные занятия");
+        assertPageContains("Основы Java");
+    }
+
+    @Test(groups = "system")
+    public void scheduleSearchReturnsTeacherLessons() {
+        open("/schedule");
+        new Select(byId("searchType")).selectByValue("teacher");
+        new Select(byId("teacherId")).selectByIndex(1);
+        setDateTimeValue("from", "2026-03-01T00:00");
+        setDateTimeValue("to", "2026-03-10T23:59");
+        submitForm();
+
+        assertPageContains("Результат поиска расписания");
+        assertPageContains("Преподаватель");
         assertPageContains("Основы Java");
     }
 
@@ -250,6 +393,29 @@ public class WebInterfaceSystemTest extends AbstractTestNGSpringContextTests {
 
     private void submitForm() {
         driver.findElement(By.cssSelector("button[type='submit']")).click();
+    }
+
+    private void replaceValue(String elementId, String value) {
+        WebElement element = byId(elementId);
+        element.clear();
+        element.sendKeys(value);
+    }
+
+    private String currentEntityId() {
+        Matcher matcher = LAST_PATH_NUMBER.matcher(driver.getCurrentUrl());
+        Assert.assertTrue(matcher.matches(), "Current URL should end with entity id: " + driver.getCurrentUrl());
+        return matcher.group(1);
+    }
+
+    private void post(String path) {
+        ((JavascriptExecutor) driver).executeScript(
+                "const form = document.createElement('form');"
+                        + "form.method = 'post';"
+                        + "form.action = arguments[0];"
+                        + "document.body.appendChild(form);"
+                        + "form.submit();",
+                "http://localhost:" + port + path
+        );
     }
 
     private void setDateTimeValue(String elementId, String value) {
